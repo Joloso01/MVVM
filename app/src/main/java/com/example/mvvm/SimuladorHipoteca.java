@@ -2,34 +2,52 @@ package com.example.mvvm;
 
 public class SimuladorHipoteca {
 
-    public void main(String[] args) {
-        int num = -3;
+    public static class Solicitud {
+        public double capital;
+        public int plazo;
 
-        int precio = 0;
-
-        try {
-            precio = calcularPrecio(num);
-            System.out.println(precio);
-        } catch (Exception e) {
-            System.out.println("error");
+        public Solicitud(double capital, int plazo) {
+            this.capital = capital;
+            this.plazo = plazo;
         }
     }
 
-    public double calcular(SolicitudHipoteca solicitud) {
+    interface Callback {
+        void cuandoEmpieceElCalculo();
+        void cuandoFinaliceElCalculo();
+        void cuandoEsteCalculadaLaCuota(double cuota);
+        void cuandoHayaErrorDeCapitalInferiorAlMinimo(double capitalMinimo);
+        void cuandoHayaErrorDePlazoInferiorAlMinimo(int plazoMinimo);
+    }
+
+    public void calcular(Solicitud solicitud, Callback callback) {
         double interes = 0;
+        double capitalMinimo = 0;
+        int plazoMinimo = 0;
+        callback.cuandoEmpieceElCalculo();
+
         try {
             Thread.sleep(10000);   // simular operacion de larga duracion (10s)
             interes = 0.01605;
+            capitalMinimo = 1000;
+            plazoMinimo = 2;
         } catch (InterruptedException e) {}
 
-        return solicitud.capital*interes/12/(1-Math.pow(1+(interes/12),-solicitud.plazo*12));
-    }
-
-    int calcularPrecio(int numarticulos) throws Exception {
-        if(numarticulos < 0){
-            throw new Exception();
+        boolean error = false;
+        if (solicitud.capital < capitalMinimo) {
+            callback.cuandoHayaErrorDeCapitalInferiorAlMinimo(capitalMinimo);
+            error = true;
         }
-        return numarticulos*10;
+
+        if (solicitud.plazo < plazoMinimo) {
+            callback.cuandoHayaErrorDePlazoInferiorAlMinimo(plazoMinimo);
+            error = true;
+        }
+
+        if(!error) {
+            callback.cuandoEsteCalculadaLaCuota(solicitud.capital * interes / 12 / (1 - Math.pow(1 + (interes / 12), -solicitud.plazo * 12)));
+        }
+        callback.cuandoFinaliceElCalculo();
+
     }
 }
-
